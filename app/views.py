@@ -21,7 +21,7 @@ def product_view(request, pk):
     product = get_object_or_404(Product, id=pk)
 
     form = ReviewForm(request.POST)
-    print('Form type:', type(form), 'Form content:', form)
+    #print('Form type:', type(form), 'Form content:', form)
     if request.method == 'POST':
         #if form.is_valid():
         review = Review()
@@ -29,10 +29,13 @@ def product_view(request, pk):
         review.product = product
         # логика для добавления отзыва
         review.save()
-
+    reviews = Review.objects.all()
+    for k in reviews:
+        print(k.text)
     context = {
         'form': form,
-        'product': product
+        'product': product,
+        'reviews': reviews,
     }
 
     return render(request, template, context)
