@@ -2,7 +2,7 @@ from django.shortcuts import redirect, render, get_object_or_404
 from django.urls import reverse
 
 from .models import Product, Review
-from .forms import ReviewForm
+from .forms import ReviewForm, NoReviewForm
 
 
 def product_list_view(request):
@@ -21,36 +21,51 @@ def product_view(request, pk):
     product = get_object_or_404(Product, id=pk)
     session = request.session.session_key
     print('Session id:', session)
-    form = ReviewForm(request.POST)
-    #print('Form type:', type(form), 'Form content:', form)
-    if 'reviewed_products' in request.session.keys():
-        reviewed = request.session.get('reviewed_products')
-        print('Reviewed items:', reviewed)
-    else:
-        request.session['reviewed_products'] = []
-    print('req session keys:', request.session.keys())
+    form = NoReviewForm(request.POST)
+    print('Form type:', type(form), 'Form content:', form)
+    is_reviewed = False
+
+    def print_and_review(request, pk):
+        print('----------------')
+        print('Req session:', request.session)
+        print('Req sess reviewed_products:', request.session['reviewed_products'])
+        print('No review from this session on product', pk)
+        review = Review()
+        review.text = form.cleaned_data['text']
+        review.product = product
+        review.save()
+        saved_list = request.session['reviewed_products']
+        saved_list.append(pk)
+        request.session['reviewed_products'] = saved_list
+
 
     if request.method == 'POST':
-        #if form.is_valid():
-        if pk not in reviewed:
-            print('Product id:', pk, ', ... you are in not_revieved selection')
-            review = Review()
-            #review.text = form.cleaned_data['text']
-            review.product = product
-            # логика для добавления отзыва
-            review.save()
-            request.session['reviewed_products'].append(pk)
-            print('Reviewed items:', request.session.get('reviewed_products'))
-        else:
-            print('you review to this product allways exist')
+        if form.is_valid():
+            if not ('reviewed_products' in request.session):
+                request.session['reviewed_products'] = []
+                print_and_review(request, pk)
+
+            else:
+                if not (pk in request.session['reviewed_products']):
+                    print_and_review(request, pk)
+                else:
+                    print('!!!!You reviewed this product!!!!')
+                    is_reviewed = True
 
     reviews = Review.objects.all()
     for k in reviews:
-        print(k.text)
+        print('Reviews we have:', k.text)
+
+    if is_reviewed:
+        form = NoReviewForm(request.POST)
+    else:
+        form = ReviewForm(request.POST)
+
     context = {
-        'form': form,
-        'product': product,
-        'reviews': reviews,
-    }
+            'form': form,
+            'product': product,
+            'reviews': reviews,
+            'is_review_exist': is_reviewed,
+        }
 
     return render(request, template, context)
