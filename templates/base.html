@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <title>Title</title>
       {% load static %}
+      {% load admin_urls %}
     <link rel="stylesheet" type="text/css" href="{% static 'css/bootstrap.min.css' %}"/>
     <link rel="stylesheet" type="text/css" href="{% static 'css/review.css' %}"/>
 
@@ -15,6 +16,8 @@
 
     {% block content %}
     {% endblock %}
-
+<a href="{% url 'main_page' %}">home page</a>
+<br>
+<a href="{% url 'admin:index' %}">admin page</a>
 </body>
 </html>
