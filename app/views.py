@@ -17,12 +17,13 @@ def product_list_view(request):
 
 
 def product_view(request, pk):
+    print('****************** FIRST METHOD ',request.method, ' *********************')
     template = 'app/product_detail.html'
     product = get_object_or_404(Product, id=pk)
     session = request.session.session_key
     print('Session id:', session)
-    form = NoReviewForm(request.POST)
-    print('Form type:', type(form), 'Form content:', form)
+    form = ReviewForm(request.POST)
+    #print('Form type:', type(form), 'Form content:', form)
     is_reviewed = False
 
     def print_and_review(request, pk):
@@ -38,6 +39,43 @@ def product_view(request, pk):
         saved_list.append(pk)
         request.session['reviewed_products'] = saved_list
 
+    if request.method == 'GET':
+        print('WE IN GET!!')
+        if not ('reviewed_products' in request.session):
+            print('*** WE in First IF ***')
+            form = ReviewForm(request.POST)
+            reviews = Review.objects.all()
+            is_reviewed = False
+            context = {
+            'form': form,
+            'product': product,
+            'reviews': reviews,
+            'is_review_exist': is_reviewed,
+            }
+        else:
+            if not (pk in request.session['reviewed_products']):
+                print('*** WE in Second IF ***')
+                form = ReviewForm(request.POST)
+                reviews = Review.objects.all()
+                is_reviewed = False
+                context = {
+                'form': form,
+                'product': product,
+                'reviews': reviews,
+                'is_review_exist': is_reviewed,
+                }
+            else:
+                print('You in GET method, and you reviewed this product')
+                is_reviewed = True
+                reviews = Review.objects.all()
+                form = ReviewForm(request.POST)
+                context = {
+                'form': form,
+                'product': product,
+                'reviews': reviews,
+                'is_review_exist': is_reviewed,
+                }
+
 
     if request.method == 'POST':
         if form.is_valid():
@@ -51,21 +89,22 @@ def product_view(request, pk):
                 else:
                     print('!!!!You reviewed this product!!!!')
                     is_reviewed = True
+        reviews = Review.objects.all()
+        for k in reviews:
+            print('Reviews we have:', k.text)
 
-    reviews = Review.objects.all()
-    for k in reviews:
-        print('Reviews we have:', k.text)
+        if is_reviewed:
+            form = NoReviewForm(request.POST)
+        else:
+            form = ReviewForm(request.POST)
 
-    if is_reviewed:
-        form = NoReviewForm(request.POST)
-    else:
-        form = ReviewForm(request.POST)
-
-    context = {
+        context = {
             'form': form,
             'product': product,
             'reviews': reviews,
             'is_review_exist': is_reviewed,
         }
+
+
 
     return render(request, template, context)
